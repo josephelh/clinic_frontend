@@ -2,7 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "components/navbar";
 import Sidebar from "components/sidebar";
-import Footer from "components/footer/Footer";
+
 import routes from "routes";
 import { motion } from "framer-motion";
 
@@ -92,9 +92,9 @@ export default function Admin(props: { [x: string]: any }) {
                 </Routes>
               </motion.div>
             </div>
-            <div className="p-3">
+            {/* <div className="p-3">
               <Footer />
-            </div>
+            </div> */}
           </div>
         </main>
       </div>

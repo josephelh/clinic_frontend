@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   ScheduleComponent,
   ViewsDirective,
@@ -12,7 +12,8 @@ import {
   ResourceDirective,
   Resize,
   DragAndDrop,
-  View,
+  DragEventArgs,
+  ResizeEventArgs,
 } from "@syncfusion/ej2-react-schedule";
 import Card from "components/card";
 import {
@@ -20,34 +21,136 @@ import {
   Appointment,
 } from "src/services/appointmentService";
 import { doctorService, DoctorResource } from "src/services/doctorService";
+import { patientService, Patient } from "src/services/patientService";
 import { QuickInfoTemplate } from "./components/QuickInfoTemplate";
 import { EditorTemplate } from "components/editorTemplate";
 import Loader from "src/components/loader/Loader";
+import { useAuthStore } from "src/store/useAuthStore";
 
 const AgendaView = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<DoctorResource[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const user = useAuthStore((state) => state.user);
+  const scheduleObj = useRef<ScheduleComponent>(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [appData, docData] = await Promise.all([
-          appointmentService.getAppointments(),
-          // Now that we fixed the backend, this won't 404
+        const [docData, patientData, appData] = await Promise.all([
           doctorService.getClinicDoctors(),
+          patientService.getPatients(),
+          appointmentService.getAppointments(),
         ]);
 
-        setAppointments(appData);
-        setDoctors(docData);
+        let finalAppointments = appData;
+        let finalDoctors = docData;
+
+        if (user?.role === 'DOCTOR') {
+            const currentDoctor = docData.find(d => d.username === user.username);
+            if (currentDoctor) {
+                // Filter appointments for this doctor only
+                finalAppointments = appData.filter(app => app.doctor === currentDoctor.id);
+                // Determine if we should only show the current doctor in the resource view
+                finalDoctors = [currentDoctor];
+            }
+        }
+
+        setAppointments(finalAppointments);
+        setDoctors(finalDoctors);
+        setPatients(patientData);
       } catch (err) {
         console.error("Connection Error:", err);
       } finally {
         setLoading(false);
       }
     };
-    loadData();
-  }, []);
+    
+    if (user) {
+        loadData();
+    }
+  }, [user]);
+
+  // Handle Drag & Drop
+  const onDragStop = async (args: DragEventArgs) => {
+    if (!args.data) return;
+    
+    const updatedData = args.data as Appointment; // Contains updated StartTime/EndTime
+    
+    // Note: args.data in Syncfusion DragEventArgs usually contains the updated event object.
+    
+    // Optimistic Update
+    const updatedList = appointments.map(app => 
+        app.Id === updatedData.Id ? { ...app, StartTime: updatedData.StartTime, EndTime: updatedData.EndTime, doctor: updatedData.doctor } : app
+    );
+    setAppointments(updatedList);
+
+    try {
+        await appointmentService.updateAppointment(updatedData.Id, {
+            StartTime: updatedData.StartTime,
+            EndTime: updatedData.EndTime,
+            doctor: updatedData.doctor
+        });
+    } catch (err) {
+        console.error("Failed to update appointment on drag", err);
+        const originalData = await appointmentService.getAppointments();
+        setAppointments(originalData); 
+    }
+  };
+
+  // Handle Resize
+  const onResizeStop = async (args: ResizeEventArgs) => {
+    if (!args.data) return;
+    
+    const updatedData = args.data as Appointment;
+    
+     // Optimistic Update
+     const updatedList = appointments.map(app => 
+        app.Id === updatedData.Id ? { ...app, StartTime: updatedData.StartTime, EndTime: updatedData.EndTime } : app
+    );
+    setAppointments(updatedList);
+
+    try {
+        await appointmentService.updateAppointment(updatedData.Id, {
+            StartTime: updatedData.StartTime,
+            EndTime: updatedData.EndTime
+        });
+    } catch (err) {
+        console.error("Failed to update appointment on resize", err);
+        const originalData = await appointmentService.getAppointments();
+        setAppointments(originalData); 
+    }
+  };
+
+  // Handle Editor Save
+  const handleEditorSave = async (data: any) => {
+    const isNew = !data.Id;
+    
+    try {
+        if (isNew) {
+            await appointmentService.createAppointment(data);
+            const allApps = await appointmentService.getAppointments();
+            setAppointments(allApps);
+        } else {
+            await appointmentService.updateAppointment(data.Id, data);
+            setAppointments(prev => prev.map(app => app.Id === data.Id ? { ...app, ...data } : app));
+        }
+
+        if (scheduleObj.current) {
+            scheduleObj.current.closeEditor();
+        }
+    } catch (err) {
+        console.error("Failed to save appointment", err);
+        alert("Erreur lors de l'enregistrement");
+    }
+  };
+
+  const handleEditorCancel = () => {
+    if (scheduleObj.current) {
+        scheduleObj.current.closeEditor();
+    }
+  };
 
   if (loading)
     return (
@@ -60,9 +163,13 @@ const AgendaView = () => {
      <div className="mt-3 h-full">
       <Card extra="w-full h-[calc(100vh-150px)] p-4">
         <ScheduleComponent
+          ref={scheduleObj}
           width="100%"
           height="100%"
-          currentView="Week"
+          startHour="08:00"
+          endHour="18:00"
+          currentView="WorkWeek"
+          
           selectedDate={new Date()} // Shows current date
           eventSettings={{ 
             dataSource: appointments,
@@ -71,12 +178,28 @@ const AgendaView = () => {
                 subject: { name: 'Subject' },
                 startTime: { name: 'StartTime' },
                 endTime: { name: 'EndTime' },
-                resourceId: 'doctor' // Matches the 'doctor' ID in appointments
+                resourceId: 'doctor', // Matches the 'doctor' ID in appointments
+                description: { name: 'Description' },
+                isAllDay: { name: 'IsAllDay' }
             }
           }}
+          dragStop={onDragStop}
+          resizeStop={onResizeStop}
+
           group={{ resources: ['Doctors'] }}
-          quickInfoTemplates={{ content: QuickInfoTemplate }}
-          editorTemplate={EditorTemplate}
+          quickInfoTemplates={{ content: (props: any) => <QuickInfoTemplate {...props} /> }}
+          editorFooterTemplate={() => <div />} 
+          editorTemplate={(props: any) => (
+            <EditorTemplate 
+              {...props} 
+              patients={patients} 
+              doctors={doctors}
+              userRole={user?.role}
+              onSave={handleEditorSave}
+              onCancel={handleEditorCancel}
+              setPatients={setPatients}
+            />
+          )}
         >
           <ResourcesDirective>
             <ResourceDirective

@@ -1,0 +1,162 @@
+import React, { useState } from "react";
+import { Patient, patientService } from "src/services/patientService";
+import { IoCloseCircle } from "react-icons/io5"; // Assuming similar icon exists or I'll just use text
+
+interface AddPatientModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onPatientCreated: (patient: Patient) => void;
+}
+
+export const AddPatientModal: React.FC<AddPatientModalProps> = ({
+  isOpen,
+  onClose,
+  onPatientCreated,
+}) => {
+  const [formData, setFormData] = useState<Partial<Patient>>({
+    first_name: "",
+    last_name: "",
+    phone: "",
+    insurance_type: "Private",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.first_name || !formData.last_name) {
+      setError("First name and last name are required.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    const newPatient = await patientService.createPatient(formData);
+
+    if (newPatient) {
+      onPatientCreated(newPatient);
+      setFormData({
+        first_name: "",
+        last_name: "",
+        phone: "",
+        insurance_type: "Private",
+      });
+      onClose();
+    } else {
+      setError("Erreur lors de la création du patient.");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-navy-800">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-navy-700 dark:text-white">
+            Nouveau Patient
+          </h2>
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-navy-700 dark:text-white"
+          >
+            <IoCloseCircle size={20} />
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 rounded bg-red-100 p-3 text-red-600">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className=" flex">
+            <div>
+            <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
+              First Name
+            </label>
+            <input
+              name="first_name"
+              value={formData.first_name}
+              onChange={handleChange}
+              placeholder="Ex: John Doe"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 dark:bg-navy-900 dark:text-white"
+            />
+            <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
+              Last Name
+            </label>
+            <input
+              name="last_name"
+              value={formData.last_name}
+              onChange={handleChange}
+              placeholder="Ex: John Doe"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 dark:bg-navy-900 dark:text-white"
+            />
+          </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
+              Téléphone
+            </label>
+            <input
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="06..."
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 dark:bg-navy-900 dark:text-white"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            
+            <div>
+              <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
+                Assurance
+              </label>
+              <select
+                name="insurance_type"
+                value={formData.insurance_type}
+                onChange={handleChange}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 dark:bg-navy-900 dark:text-white"
+              >
+                <option value="Private">Privé</option>
+                <option value="CNOPS">CNOPS</option>
+                <option value="CNSS">CNSS</option>
+                <option value="AMO">AMO</option>
+              </select>
+            </div>
+          </div>
+
+          
+
+          <div className="mt-4 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-white dark:hover:bg-navy-700"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+            >
+              {loading ? "Création..." : "Ajouter Patient"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

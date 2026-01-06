@@ -10,11 +10,135 @@
 
 /* Syncfusion Scheduler Specific */
 
+/* Dark mode styles for Syncfusion Scheduler */
+body.dark .e-schedule,
+body.dark .e-schedule * {
+  background-color: #1a1f3a !important;
+  color: #e0e6ff !important;
+  border-color: #2d3561 !important;
+}
 
+body.dark .e-schedule .e-header-cells {
+  background-color: #0f1419 !important;
+  color: #e0e6ff !important;
+  border-bottom-color: #2d3561 !important;
+}
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+body.dark .e-schedule .e-time-cells {
+  background-color: #1a1f3a !important;
+  border-color: #2d3561 !important;
+}
+
+body.dark .e-schedule .e-work-cells {
+  background-color: #1a1f3a !important;
+  border-color: #2d3561 !important;
+}
+
+body.dark .e-schedule .e-work-cells:hover {
+  background-color: #252d4a !important;
+}
+
+body.dark .e-schedule .e-appointment {
+  background-color: #422afb !important;
+  color: #ffffff !important;
+}
+
+body.dark .e-dialog {
+  background-color: #1a1f3a !important;
+}
+
+body.dark .e-dialog,
+body.dark .e-dialog * {
+  background-color: #1a1f3a !important;
+}
+
+body.dark .e-dlg-header,
+body.dark .e-dlg-footer,
+body.dark .e-dialog-content {
+  background-color: #1a1f3a !important;
+}
+
+body.dark .e-dialog .e-dlg-header {
+  background-color: #0f1419 !important;
+}
+
+body.dark .e-dialog .e-footer-content {
+  background-color: #1a1f3a !important;
+}
+
+/* Dark mode for dialog buttons */
+body.dark .e-dialog .e-btn {
+  color: #ffffff !important;
+  border-color: #2d3561 !important;
+  background-color: transparent !important;
+}
+
+body.dark .e-dialog .e-btn:hover {
+  background-color: #252d4a !important;
+  color: #ffffff !important;
+}
+
+/* Keep save button with primary color */
+body.dark .e-dialog .e-btn.e-primary {
+  background-color: #422afb !important;
+  color: #ffffff !important;
+  border-color: #422afb !important;
+}
+
+body.dark .e-dialog .e-btn.e-primary:hover {
+  background-color: #3311db !important;
+}
+
+/* Dialog text styling */
+body.dark .e-dialog {
+  color: #ffffff !important;
+}
+
+body.dark .e-dlg-header, 
+body.dark .e-title-text {
+  color: #ffffff !important;
+}
+body.dark .e-dialog .e-icon-dlg-close::before {
+  color: #e0e6ff !important;
+}
+
+body.dark .e-input,
+body.dark .e-field {
+  background-color: #252d4a !important;
+  color: #e0e6ff !important;
+  border-color: #2d3561 !important;
+}
+
+body.dark .e-input:focus,
+body.dark .e-field:focus {
+  background-color: #2d3561 !important;
+  border-color: #422afb !important;
+}
+
+body.dark select.e-input,
+body.dark select.e-field {
+  background-color: #252d4a !important;
+  color: #e0e6ff !important;
+}
+
+body.dark textarea.e-input,
+body.dark textarea.e-field {
+  background-color: #252d4a !important;
+  color: #e0e6ff !important;
+}
+
+body.dark .e-popup {
+  background-color: #1a1f3a !important;
+  color: #e0e6ff !important;
+  border-color: #2d3561 !important;
+}
+
+body.dark .e-quick-popup {
+  background-color: #1a1f3a !important;
+  color: #e0e6ff !important;
+  border-color: #2d3561 !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-

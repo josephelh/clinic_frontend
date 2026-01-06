@@ -6,6 +6,9 @@ import ProtectedRoute from "src/components/auth/ProtectedRoute";
 import PageLoader from "src/components/loader/PageLoader"; // Import Loader
 import { AnimatePresence } from "framer-motion";
 import RouteProgress from "src/components/loader/RouteProgress";
+import { registerLicense } from '@syncfusion/ej2-base';
+
+registerLicense('Ngo9BigBOggjGyl/VkR+XU9Ff1RDX3xKf0x/TGpQb19xflBPallYVBYiSV9jS3hTd0VnW3xbcHBUQ2hdVU91XQ==');
 
 
 const App = () => {

@@ -9,11 +9,13 @@ export interface Appointment {
   Description?: string;
   Status?: string;
   PatientId?: string; // Link to Patient EMR
-  ToothNumber?: number; // FDI Notation (e.g., 11, 48)
+  tooth_number?: number; // FDI Notation (e.g., 11, 48)
   doctor?: number; // Doctor ID for resource mapping
-  patient_name?: string;
   doctor_name?: string;
-  tooth_number?: number;
+  patient_name?: string;
+  patient_phone?: string;
+  insurance_type?: string; // AMO, Mutuelle, Private
+  multiple_teeth?: boolean;
 }
 
 export const appointmentService = {
@@ -29,11 +31,14 @@ export const appointmentService = {
         StartTime: new Date(app.StartTime), // FIXED: app.start_time was undefined
         EndTime: new Date(app.EndTime), // FIXED: app.end_time was undefined
         Description: app.Description || "",
-        Status: app.Status || "Scheduled",
+        Status: app.Status || "Confirmé",
         doctor: app.doctor, // This ID must match the Doctor Resource ID
+        doctor_name: app.doctor_name,
         patient_name: app.patient_name,
         patient_phone: app.patient_phone,
+        insurance_type: app.insurance_type || "Private",
         tooth_number: app.tooth_number,
+        multiple_teeth: app.multiple_teeth || false,
       }));
     } catch (error) {
       console.error("Failed to fetch appointments", error);
