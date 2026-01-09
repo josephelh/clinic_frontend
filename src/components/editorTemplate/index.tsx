@@ -54,15 +54,13 @@ export const EditorTemplate = (props: EditorTemplateProps) => {
     Id: props.Id,
     Subject: props.Subject || "",
     patient_name: props.patient_name || "", 
-    PatientId: props.PatientId || "", 
+    patient: props.patient || undefined, // Changed from PatientId to patient (number)
     doctor: props.doctor || props.resourceId || (props.doctors?.length === 1 ? props.doctors[0].id : "") || "",
     Status: props.Status || "Confirmé",
     Description: props.Description || "",
     StartTime: props.StartTime || new Date(),
     EndTime: props.EndTime || new Date(),
-    tooth_number: props.tooth_number || "",
-    multiple_teeth: props.multiple_teeth || false,
-    insurance_type: props.insurance_type || "Private",
+    tooth_number: props.tooth_number || null, // Changed to null for FDI
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -71,16 +69,16 @@ export const EditorTemplate = (props: EditorTemplateProps) => {
   
   // Try to find initial patient name if ID exists but name doesn't (or vice versa)
   useEffect(() => {
-    if (props.PatientId && props.patients) {
-        const p = props.patients.find(pt => pt.id === props.PatientId);
+    if (props.patient && props.patients) {
+        const p = props.patients.find(pt => pt.id === props.patient);
         if (p) setSearchTerm(p.full_name);
     } else if (props.patient_name) {
         setSearchTerm(props.patient_name);
-        // Try to reverse lookup ID?
+        // Try to reverse lookup ID
         const p = props.patients?.find(pt => pt.full_name === props.patient_name);
-        if (p) setFormData(prev => ({ ...prev, PatientId: p.id }));
+        if (p) setFormData(prev => ({ ...prev, patient: p.id }));
     }
-  }, [props.PatientId, props.patient_name, props.patients]);
+  }, [props.patient, props.patient_name, props.patients]);
 
 
   const handleChange = (field: string, value: any) => {
@@ -91,10 +89,9 @@ export const EditorTemplate = (props: EditorTemplateProps) => {
     setSearchTerm(patient.full_name);
     setFormData((prev) => ({
       ...prev,
-      PatientId: patient.id,
+      patient: patient.id, // Changed from PatientId to patient
       patient_name: patient.full_name,
       Subject: prev.Subject || "Consultation", // Default subject
-      insurance_type: patient.insurance_type || "Private",
     }));
     setShowPatientList(false);
   };
@@ -198,34 +195,23 @@ export const EditorTemplate = (props: EditorTemplateProps) => {
           </select>
         </div>
 
-         {/* Tooth & Multiple */}
-         <div className="grid grid-cols-2 gap-4 items-end">
-            <div>
-                <label className="text-sm font-bold text-navy-700 mb-2 block dark:text-white">
-                    Dent (FDI)
-                </label>
-                <select
-                    value={formData.tooth_number}
-                    onChange={(e) => handleChange("tooth_number", e.target.value)}
-                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 dark:bg-navy-900 dark:text-white"
-                >
-                    <option value="">N/A</option>
-                    {FDI_TOOTH_NUMBERS.map((num) => (
-                        <option key={num} value={num}>
-                            {num}
-                        </option>
-                    ))}
-                </select>
-            </div>
-            <div className="flex items-center gap-2 mb-3">
-                <input
-                    type="checkbox"
-                    checked={formData.multiple_teeth}
-                    onChange={(e) => handleChange("multiple_teeth", e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300"
-                />
-                <span className="text-sm font-medium text-navy-700 dark:text-white">Plusieurs dents</span>
-            </div>
+         {/* Tooth Number (FDI) */}
+         <div>
+            <label className="text-sm font-bold text-navy-700 mb-2 block dark:text-white">
+                Dent (FDI)
+            </label>
+            <select
+                value={formData.tooth_number || ""}
+                onChange={(e) => handleChange("tooth_number", e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 dark:bg-navy-900 dark:text-white"
+            >
+                <option value="">N/A</option>
+                {FDI_TOOTH_NUMBERS.map((num) => (
+                    <option key={num} value={num}>
+                        {num}
+                    </option>
+                ))}
+            </select>
         </div>
 
         {/* Doctor */}

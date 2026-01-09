@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 // Status color mapping for Morocco clinic workflow
 const statusColorMap: { [key: string]: string } = {
   "Confirmé": "bg-green-100 text-green-800",
@@ -17,6 +19,7 @@ const insuranceBadgeMap: { [key: string]: string } = {
 };
 
 export const QuickInfoTemplate = (props: any) => {
+  const navigate = useNavigate();
   const status = props.Status || props.status || "Confirmé";
   const statusClass = statusColorMap[status] || "bg-gray-100 text-gray-800";
   
@@ -71,6 +74,17 @@ export const QuickInfoTemplate = (props: any) => {
         </span>
         <span className="text-xs text-gray-400">Dr. {props.doctor_name || "Non assigné"}</span>
       </div>
+
+      <button
+        onClick={() => {
+          navigate(`/admin/patients/${props.patient}/emr`, {
+            state: { appointmentId: props.Id },
+          });
+        }}
+        className="w-full bg-brand-500 text-white rounded-xl h-[48px] font-bold mt-4"
+      >
+        Démarrer la Séance
+      </button>
     </div>
   );
 };

@@ -38,14 +38,15 @@ const AgendaView = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [docData, patientData, appData] = await Promise.all([
+        const [docData, patientResponse, appData] = await Promise.all([
           doctorService.getClinicDoctors(),
-          patientService.getPatients(),
+          patientService.getPatients(), // Used for dropdowns? Note: Only first 20 will load.
           appointmentService.getAppointments(),
         ]);
 
         let finalAppointments = appData;
         let finalDoctors = docData;
+        const patientData = patientResponse.data;
 
         if (user?.role === 'DOCTOR') {
             const currentDoctor = docData.find(d => d.username === user.username);
@@ -57,7 +58,32 @@ const AgendaView = () => {
             }
         }
 
-        setAppointments(finalAppointments);
+        // CRITICAL: Ensure all appointments have valid doctor IDs and Dates
+        // Filter out appointments without doctor assignment
+        const validAppointments = finalAppointments
+          .filter(app => app.doctor != null)
+          .map(app => {
+            const start = app.StartTime instanceof Date ? app.StartTime : new Date(app.StartTime);
+            let end = app.EndTime instanceof Date ? app.EndTime : new Date(app.EndTime);
+
+            // Fix invalid data where EndTime < StartTime (Common seeding error)
+            if (end <= start) {
+                console.warn(`⚠️ Fixing invalid appointment duration for ID ${app.Id}: EndTime was before StartTime.`);
+                end = new Date(start.getTime() + 30 * 60000); // Add 30 minutes
+            }
+
+            return {
+                ...app,
+                StartTime: start,
+                EndTime: end,
+                IsAllDay: false // Force vertical grid rendering
+            };
+          });
+        
+        console.log('📅 Appointments loaded:', validAppointments.length);
+        console.log('👨‍⚕️ Doctors loaded:', finalDoctors.map(d => ({ id: d.id, name: d.full_name })));
+        
+        setAppointments(validAppointments);
         setDoctors(finalDoctors);
         setPatients(patientData);
       } catch (err) {
@@ -87,6 +113,7 @@ const AgendaView = () => {
     setAppointments(updatedList);
 
     try {
+        if (!updatedData.Id) throw new Error("No appointment ID");
         await appointmentService.updateAppointment(updatedData.Id, {
             StartTime: updatedData.StartTime,
             EndTime: updatedData.EndTime,
@@ -112,6 +139,7 @@ const AgendaView = () => {
     setAppointments(updatedList);
 
     try {
+        if (!updatedData.Id) throw new Error("No appointment ID");
         await appointmentService.updateAppointment(updatedData.Id, {
             StartTime: updatedData.StartTime,
             EndTime: updatedData.EndTime
@@ -170,23 +198,23 @@ const AgendaView = () => {
           endHour="18:00"
           currentView="WorkWeek"
           
-          selectedDate={new Date()} // Shows current date
+          selectedDate={new Date()}
           eventSettings={{ 
             dataSource: appointments,
             fields: {
-                id: 'Id',
-                subject: { name: 'Subject' },
-                startTime: { name: 'StartTime' },
-                endTime: { name: 'EndTime' },
-                resourceId: 'doctor', // Matches the 'doctor' ID in appointments
-                description: { name: 'Description' },
-                isAllDay: { name: 'IsAllDay' }
+              id: 'Id',
+              subject: { name: 'Subject' },
+              startTime: { name: 'StartTime' },
+              endTime: { name: 'EndTime' },
+              description: { name: 'Description' }
             }
           }}
           dragStop={onDragStop}
           resizeStop={onResizeStop}
 
-          group={{ resources: ['Doctors'] }}
+          group={{ 
+            resources: ['Doctors']
+          }}
           quickInfoTemplates={{ content: (props: any) => <QuickInfoTemplate {...props} /> }}
           editorFooterTemplate={() => <div />} 
           editorTemplate={(props: any) => (
@@ -206,6 +234,7 @@ const AgendaView = () => {
               field="doctor"
               title="Médecin"
               name="Doctors"
+              allowMultiple={false}
               dataSource={doctors}
               idField="id"
               textField="full_name"

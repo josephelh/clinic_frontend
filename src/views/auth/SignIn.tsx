@@ -1,25 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "src/services/authService";
+import { useTenant } from "src/contexts/TenantContext";
 import InputField from "components/fields/InputField";
 import Loader from "components/loader/Loader";
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const { clinicSubdomain, isPublicSchema } = useTenant();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    // Warn if accessing login on public schema
+    if (isPublicSchema) {
+      console.warn(
+        "⚠️ Login page accessed on PUBLIC schema. Users should be on clinic subdomain."
+      );
+    }
+  }, [isPublicSchema]);
+
   const handleLogin = async (e: React.FormEvent) => {
     if (e) e.preventDefault();
-    console.log("Attempting login for:", username); // Debug log
+    console.log("Attempting login for:", username);
     setLoading(true);
     setError("");
 
     try {
       await authService.login({ username, password });
-      navigate("/admin/default"); // Redirect to Dashboard
+      navigate("/admin/default");
     } catch (err: any) {
       console.error("Login Error Catch:", err);
       setError(err.message);
@@ -27,6 +38,7 @@ export default function SignIn() {
       setLoading(false);
     }
   };
+
   return (
     <div className="mt-16 mb-16 flex h-full w-full items-center justify-center px-2 md:mx-0 md:px-0 lg:mb-10 lg:items-center lg:justify-start">
       <div className="mt-[2vh] w-full max-w-full flex-col items-center md:pl-12 lg:pl-0 xl:max-w-[420px]">
@@ -34,8 +46,25 @@ export default function SignIn() {
           Connexion
         </h4>
         <p className="mb-9 ml-1 text-base text-gray-600">
-          Entrez votre nom d'utilisateur pour accéder au cabinet.
+          {clinicSubdomain
+            ? `Cabinet: ${clinicSubdomain}`
+            : "Entrez votre nom d'utilisateur pour accéder au cabinet."}
         </p>
+
+        {/* Tenant Warning for Public Schema */}
+        {isPublicSchema && (
+          <div className="mb-4 text-sm font-medium text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
+            ⚠️ Vous êtes sur le schéma public. Accédez via le sous-domaine de
+            votre cabinet (ex: clinic1.localhost:3000)
+          </div>
+        )}
+
+        {/* Tenant Info Display */}
+        {clinicSubdomain && (
+          <div className="mb-4 text-sm font-medium text-green-600 bg-green-50 p-3 rounded-lg border border-green-200">
+            🏥 Connexion au cabinet: <strong>{clinicSubdomain}</strong>
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 text-sm font-medium text-red-500 bg-red-50 p-3 rounded-lg border border-red-200">
@@ -77,7 +106,6 @@ export default function SignIn() {
             {loading ? (
               <>
                 <Loader size="sm" variant="white" />{" "}
-                {/* Le petit cercle qui tourne */}
                 <span>Vérification...</span>
               </>
             ) : (

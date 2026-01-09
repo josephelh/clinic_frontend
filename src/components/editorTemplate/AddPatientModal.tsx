@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Patient, patientService } from "src/services/patientService";
+import { Patient, patientService, CreatePatientPayload } from "src/services/patientService";
 import { IoCloseCircle } from "react-icons/io5"; // Assuming similar icon exists or I'll just use text
 
 interface AddPatientModalProps {
@@ -13,11 +13,19 @@ export const AddPatientModal: React.FC<AddPatientModalProps> = ({
   onClose,
   onPatientCreated,
 }) => {
-  const [formData, setFormData] = useState<Partial<Patient>>({
+  const [formData, setFormData] = useState<CreatePatientPayload>({
     first_name: "",
     last_name: "",
     phone: "",
-    insurance_type: "Private",
+    cin: "",
+    insurance_type: "NONE",
+    insurance_id: "",
+    // Medical Safety Hub
+    gender: undefined,
+    date_of_birth: "",
+    medical_alerts: "",
+    allergies: "",
+    is_high_risk: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +33,7 @@ export const AddPatientModal: React.FC<AddPatientModalProps> = ({
   if (!isOpen) return null;
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -48,7 +56,15 @@ export const AddPatientModal: React.FC<AddPatientModalProps> = ({
         first_name: "",
         last_name: "",
         phone: "",
-        insurance_type: "Private",
+        cin: "",
+        insurance_type: "NONE",
+        insurance_id: "",
+        // Medical Safety Hub
+        gender: undefined,
+        date_of_birth: "",
+        medical_alerts: "",
+        allergies: "",
+        is_high_risk: false,
       });
       onClose();
     } else {
@@ -104,6 +120,37 @@ export const AddPatientModal: React.FC<AddPatientModalProps> = ({
           </div>
           </div>
 
+          {/* Gender & Date of Birth */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
+                Genre
+              </label>
+              <select
+                name="gender"
+                value={formData.gender || ""}
+                onChange={handleChange}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 dark:bg-navy-900 dark:text-white"
+              >
+                <option value="">Sélectionner</option>
+                <option value="M">Masculin</option>
+                <option value="F">Féminin</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
+                Date de naissance
+              </label>
+              <input
+                type="date"
+                name="date_of_birth"
+                value={formData.date_of_birth || ""}
+                onChange={handleChange}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 dark:bg-navy-900 dark:text-white"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
               Téléphone
@@ -117,8 +164,71 @@ export const AddPatientModal: React.FC<AddPatientModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
+              CIN (Optionnel)
+            </label>
+            <input
+              name="cin"
+              value={formData.cin}
+              onChange={handleChange}
+              placeholder="CIN..."
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 dark:bg-navy-900 dark:text-white"
+            />
+          </div>
+
+          {/* Medical Safety Hub - CRITICAL SECTION */}
+          <div className="rounded-lg border-2 border-orange-200 bg-orange-50 p-4 dark:border-orange-900 dark:bg-orange-900/20">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-orange-700 dark:text-orange-400">
+              <span className="text-lg">⚠️</span>
+              Informations Médicales (Sécurité Chirurgicale)
+            </h3>
             
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
+                  Alertes Médicales
+                </label>
+                <textarea
+                  name="medical_alerts"
+                  value={formData.medical_alerts || ""}
+                  onChange={handleChange}
+                  placeholder="Ex: Diabète, Hypertension, Pacemaker..."
+                  rows={2}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:bg-navy-900 dark:text-white"
+                />
+              </div>
+              
+              <div>
+                <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
+                  Allergies
+                </label>
+                <textarea
+                  name="allergies"
+                  value={formData.allergies || ""}
+                  onChange={handleChange}
+                  placeholder="Ex: Pénicilline, Latex, Anesthésiques..."
+                  rows={2}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-orange-500 dark:bg-navy-900 dark:text-white"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="is_high_risk"
+                  checked={formData.is_high_risk || false}
+                  onChange={(e) => setFormData({ ...formData, is_high_risk: e.target.checked })}
+                  className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                />
+                <label className="text-sm font-medium text-navy-700 dark:text-white">
+                  Patient à Haut Risque
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
                 Assurance
@@ -129,11 +239,23 @@ export const AddPatientModal: React.FC<AddPatientModalProps> = ({
                 onChange={handleChange}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 dark:bg-navy-900 dark:text-white"
               >
-                <option value="Private">Privé</option>
-                <option value="CNOPS">CNOPS</option>
-                <option value="CNSS">CNSS</option>
+                <option value="NONE">Aucune</option>
                 <option value="AMO">AMO</option>
+                <option value="MUTUELLE">Mutuelle</option>
+                <option value="MUTUELLE_FAR">Mutuelle FAR</option>
               </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-bold text-navy-700 dark:text-white">
+                N° Assurance
+              </label>
+              <input
+                name="insurance_id"
+                value={formData.insurance_id}
+                onChange={handleChange}
+                placeholder="N° Assurance (optionnel)"
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 dark:bg-navy-900 dark:text-white"
+              />
             </div>
           </div>
 
